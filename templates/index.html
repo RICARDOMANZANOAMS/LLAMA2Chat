@@ -4,21 +4,35 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Upload PDF and Text</title>
+    <script>
+        function openPopup() {
+            fetch('/upload', {
+                method: 'POST',
+                body: new FormData(document.getElementById('upload-form'))
+            })
+            .then(response => response.json())
+            .then(data => {
+                var popupWindow = window.open('', '_blank', 'width=400,height=200');
+                popupWindow.document.write('<html><head><title>Response</title></head><body>');
+                popupWindow.document.write('<h2>Response:</h2>');
+                popupWindow.document.write('<p>' + data.response + '</p>');
+                popupWindow.document.write('<button onclick="window.close()">Close</button>');
+                popupWindow.document.write('</body></html>');
+            })
+            .catch(error => console.error('Error:', error));
+        }
+    </script>
 </head>
 <body>
     <h1>Upload a PDF file and Enter Text</h1>
-    <form action="/upload" method="post" enctype="multipart/form-data">
+    <form id="upload-form" enctype="multipart/form-data">
         <label for="file">Upload PDF file:</label>
         <input type="file" name="file" id="file"><br><br>
         
         <label for="text">Enter Text:</label><br>
         <textarea name="text" id="text" rows="4" cols="50"></textarea><br><br>
 
-        <button type="submit">Upload</button>
+        <button type="button" onclick="openPopup()">Upload</button>
     </form>
-
-    {% if response_text %}
-    <p>{{ response_text }}</p>
-    {% endif %}
 </body>
 </html>
