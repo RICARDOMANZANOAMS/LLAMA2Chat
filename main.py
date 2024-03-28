@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template
+from flask import Flask, request, render_template,jsonify
 import os
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_community.embeddings import OllamaEmbeddings
@@ -8,7 +8,9 @@ from langchain.chains import create_retrieval_chain
 from langchain_core.prompts import ChatPromptTemplate
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain_community.llms import Ollama
-
+from langchain_core.prompts import MessagesPlaceholder
+from langchain.chains import create_history_aware_retriever
+from langchain_core.messages import HumanMessage, AIMessage
 app = Flask(__name__)
 
 @app.route('/')
@@ -44,26 +46,36 @@ def predict_picture():
     text_splitter = RecursiveCharacterTextSplitter()
     documents = text_splitter.split_documents(pages)
     vector = FAISS.from_documents(documents, embeddings)
-    
-    prompt = ChatPromptTemplate.from_template("""Answer the following question based only on the provided context:
-
-    <context>
-    {context}
-    </context>
-
-    Question: {input}""")
-
-    document_chain = create_stuff_documents_chain(llm, prompt)
     retriever = vector.as_retriever()
-    retrieval_chain = create_retrieval_chain(retriever, document_chain)
-    response = retrieval_chain.invoke({"input": text})
-    print(response["answer"])
 
+    prompt = ChatPromptTemplate.from_messages([
+    MessagesPlaceholder(variable_name="chat_history"),
+    ("user", "{input}"),
+    ("user", "Given the above conversation, generate a search query to look up in order to get information relevant to the conversation")
+    ])
+    retriever_chain = create_history_aware_retriever(llm, retriever, prompt)
 
+  
+
+    chat_history = [HumanMessage(content="How old Ricardo is"), AIMessage(content="Yes!")]
+    retriever_chain.invoke({
+        "chat_history": chat_history,
+        "input": "Tell me why"
+    })
+   
+
+    prompt = ChatPromptTemplate.from_messages([("system", "Answer the user's questions based on the below context:\n\n{context}"),MessagesPlaceholder(variable_name="chat_history"),("user", "{input}"),])
+    document_chain = create_stuff_documents_chain(llm, prompt)
+
+    retrieval_chain = create_retrieval_chain(retriever_chain, document_chain)
+
+    response=retrieval_chain.invoke({
+    "chat_history": chat_history,
+    "input": text
+    })
     # # Delete the temporary file after processing
     # os.remove(file_path)
-
-    return render_template('index.html', response_text=response["answer"])
-
+    print(response["answer"])
+    return jsonify({'response': response["answer"]})
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8000)
