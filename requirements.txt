@@ -1,0 +1,7 @@
+langchain_community
+faiss-cpu
+langchain_text_splitters
+langchain
+pypdf
+flask
+ollama
