@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload PDF and Text</title>
+</head>
+<body>
+    <h1>Upload a PDF file and Enter Text</h1>
+    <form action="/upload" method="post" enctype="multipart/form-data">
+        <label for="file">Upload PDF file:</label>
+        <input type="file" name="file" id="file"><br><br>
+        
+        <label for="text">Enter Text:</label><br>
+        <textarea name="text" id="text" rows="4" cols="50"></textarea><br><br>
+
+        <button type="submit">Upload</button>
+    </form>
+
+    {% if response_text %}
+    <p>{{ response_text }}</p>
+    {% endif %}
+</body>
+</html>
