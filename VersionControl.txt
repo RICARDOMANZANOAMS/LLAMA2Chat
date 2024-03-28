@@ -1,0 +1,2 @@
+Chatpdf_v1: Service as web service with pop up window to answer a question based in a document
+Chatpdf_v2: Chat bot implementation to keep track of history. 
