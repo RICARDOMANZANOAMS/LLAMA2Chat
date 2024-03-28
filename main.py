@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template
+from flask import Flask, request, render_template,jsonify
 import os
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_community.embeddings import OllamaEmbeddings
@@ -18,6 +18,7 @@ def index():
 
 @app.route('/upload', methods=['POST'])
 def predict_picture():
+    #Upload llama model from Ollama
     llm = Ollama(model="llama2")
     # Check if the request contains a file
     if 'file' not in request.files:
@@ -37,13 +38,10 @@ def predict_picture():
     loader = PyPDFLoader(file_path)
     pages = loader.load_and_split()
 
-    print(pages)
-    print(text)
-
-    embeddings = OllamaEmbeddings()
-    text_splitter = RecursiveCharacterTextSplitter()
+    embeddings = OllamaEmbeddings()  #import embedding from ollama
+    text_splitter = RecursiveCharacterTextSplitter()  
     documents = text_splitter.split_documents(pages)
-    vector = FAISS.from_documents(documents, embeddings)
+    vector = FAISS.from_documents(documents, embeddings)  #db vector embedding
     
     prompt = ChatPromptTemplate.from_template("""Answer the following question based only on the provided context:
 
@@ -58,12 +56,12 @@ def predict_picture():
     retrieval_chain = create_retrieval_chain(retriever, document_chain)
     response = retrieval_chain.invoke({"input": text})
     print(response["answer"])
-
+    return jsonify({'response': response["answer"]})
 
     # # Delete the temporary file after processing
     # os.remove(file_path)
 
-    return render_template('index.html', response_text=response["answer"])
+    
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8000)
